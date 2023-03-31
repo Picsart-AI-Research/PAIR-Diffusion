@@ -18,9 +18,15 @@ In association with Picsart AI Research (PAIR)<sup>1</sup>, UTrento<sup>2</sup>,
 
 We built Structure and Appearance Paired (PAIR) Diffusion that allows reference image-guided appearance manipulation and structure editing of an image at an object level. Describing object appearances using text can be challenging and ambiguous, PAIR Diffusion enables a user to control the appearance of an object using images.
 
-[[arXiv]()][[Video](https://drive.google.com/file/d/1s96TNWgAwBjRDTyFTWakZosO3Ot_Fny6/view?usp=share_link)]
+[[arXiv](https://arxiv.org/abs/2303.17546)][[Video](https://drive.google.com/file/d/1s96TNWgAwBjRDTyFTWakZosO3Ot_Fny6/view?usp=share_link)]
 
-## Object Level Editing Results
+## Results
+Given below are results for appearace editing using our method on SDv1.5
+<img src="assets/ir.gif" width="99%" raw=true>
+<img src="assets/ski.gif" width="99%" raw=true>
+<img src="assets/door.gif" width="99%" raw=true>
+
+## Object Level Image Editing
 ### Stable Diffusion Results
 * Applying our method to Stable Diffusion allows reference image based editing in the wild
 
@@ -40,47 +46,3 @@ We built Structure and Appearance Paired (PAIR) Diffusion that allows reference 
 <p align="center">
   <img src="assets/Teaser.png" width="99%">
 </p>
-
-## More Results
-We show more results for appearace editing using our method on SDv1.5
-<img src="assets/ir.gif" width="99%" raw=true>
-<img src="assets/ski.gif" width="99%" raw=true>
-<img src="assets/door.gif" width="99%" raw=true>
-<!-- <center>
-<table class="center">
-<tr align="center" >
-  <td style="font-size: 20px;">Input Image</td>
-  <td style="font-size: 20px;">Reference Image</td>
-  <td style="font-size: 20px;">Edited Image</td>              
-</tr>
-<tr align="center">
-  <td><img src="assets/individual_images/ironmanv2.jpg" height="220"></td>
-  <td><img src="assets/individual_images/hulk.jpeg" height="220"></td>
-  <td><img src="assets/individual_images/ironandhuktogether.png" height="220"></td>              
-</tr>
-<tr align="center">
-  <td></td>
-  <td></td>
-  <td><i>A picture of hulk and ironman </i></td>              
-</tr>  
-<tr align="center">
-  <td><img src="assets/individual_images/ski.jpeg" height="250"></td>
-  <td><img src="assets/individual_images/lava.jpeg" height="250"></td>
-  <td><img src="assets/individual_images/skiedit.png" height="250" style="padding-top: 36px;"></td>              
-</tr>  
-  <tr align="center">
-  <td></td>
-  <td></td>
-  <td><i>A person skiing</i></td>              
-</tr>  
-<tr align="center">
-  <td><img src="assets/individual_images/metaldoor.jpeg" height="250"></td>
-  <td><img src="assets/individual_images/door.jpeg" height="250"></td>
-  <td><img src="assets/individual_images/editdoor1.png" height="250" style="padding-top: 36px;"></td>              
-</tr>  
-<tr align="center">
-  <td></td>
-  <td></td>
-  <td><i>Picture of a door</i></td>              
-</tr>  
-</table> -->
