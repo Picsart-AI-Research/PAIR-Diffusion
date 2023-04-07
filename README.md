@@ -18,7 +18,15 @@ In association with Picsart AI Research (PAIR)<sup>1</sup>, UTrento<sup>2</sup>,
 
 We built Structure and Appearance Paired (PAIR) Diffusion that allows reference image-guided appearance manipulation and structure editing of an image at an object level. Describing object appearances using text can be challenging and ambiguous, PAIR Diffusion enables a user to control the appearance of an object using images.
 
+Try our demo at [![Huggingface space](https://img.shields.io/badge/🤗-Huggingface%20Space-cyan.svg)](https://huggingface.co/spaces/PAIR/PAIR-Diffusion)
+
+
 [[arXiv](https://arxiv.org/abs/2303.17546)][[Video](https://drive.google.com/file/d/1s96TNWgAwBjRDTyFTWakZosO3Ot_Fny6/view?usp=share_link)]
+
+## News
+ * [04/07/2023] Demo relased on Huggingface spaces [🤗Huggingface space](https://huggingface.co/spaces/PAIR/PAIR-Diffusion)!
+ * [03/30/2023] Paper released on [arXiv](https://arxiv.org/abs/2303.17546)
+
 
 ## Results
 Given below are results for appearace editing using our method on SDv1.5
@@ -46,3 +54,15 @@ Given below are results for appearace editing using our method on SDv1.5
 <p align="center">
   <img src="assets/Teaser.png" width="99%">
 </p>
+
+## BibTeX
+If you use our work in your research, please cite our publication:
+```
+@article{goel2023pair,
+      title={PAIR-Diffusion: Object-Level Image Editing with Structure-and-Appearance Paired Diffusion Models},
+      author={Goel, Vidit and Peruzzo, Elia and Jiang, Yifan and Xu, Dejia and Sebe, Nicu and Darrell, Trevor and 
+      Wang, Zhangyang and Shi, Humphrey},
+      journal={arXiv preprint arXiv:2303.17546},
+      year={2023} 
+      }
+```
