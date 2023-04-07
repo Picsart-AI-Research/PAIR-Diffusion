@@ -24,7 +24,7 @@ Try our demo at [![Huggingface space](https://img.shields.io/badge/🤗-Huggingf
 [[arXiv](https://arxiv.org/abs/2303.17546)][[Video](https://drive.google.com/file/d/1s96TNWgAwBjRDTyFTWakZosO3Ot_Fny6/view?usp=share_link)]
 
 ## News
- * [04/07/2023] Demo relased on Huggingface spaces [🤗Huggingface space](https://huggingface.co/spaces/PAIR/PAIR-Diffusion)!
+ * [04/07/2023] Demo relased on [🤗Huggingface space](https://huggingface.co/spaces/PAIR/PAIR-Diffusion)!
  * [03/30/2023] Paper released on [arXiv](https://arxiv.org/abs/2303.17546)
 
 
