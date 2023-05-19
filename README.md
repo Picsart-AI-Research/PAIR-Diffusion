@@ -59,7 +59,7 @@ Given below are results for appearace editing using our method on SDv1.5
 ## Requirements
 Setup the conda environment using the command below. We use Oneformer to get segmentation maps during inference, please setup environment for Oneformer following [the repo](https://github.com/SHI-Labs/OneFormer/blob/main/INSTALL.md)
 ```
-conda env create -f environment.yaml
+conda env create -f environment.yml
 conda activate pair-diff
 ```
 
