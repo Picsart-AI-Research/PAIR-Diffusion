@@ -24,6 +24,7 @@ Try our demo at [![Huggingface space](https://img.shields.io/badge/🤗-Huggingf
 [[arXiv](https://arxiv.org/abs/2303.17546)][[Video](https://drive.google.com/file/d/1s96TNWgAwBjRDTyFTWakZosO3Ot_Fny6/view?usp=share_link)]
 
 ## News
+ * [10/11/2023] Upated the paper with the improved model and inference method.  We now support comprehensive editing capabilities along with multimodal control. Code and model will be released soon
  * [04/09/2023] Inference code released
  * [04/07/2023] Demo relased on [🤗Huggingface space](https://huggingface.co/spaces/PAIR/PAIR-Diffusion)!
  * [03/30/2023] Paper released on [arXiv](https://arxiv.org/abs/2303.17546)
