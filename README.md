@@ -1,30 +1,32 @@
-# PAIR-Diffusion
-This is the official repo for the work:
+# PAIR Diffusion: A Comprehensive Multimodal Object-Level Image Editor
+[[`Project Page`](https://vidit98.github.io/publication/conference-paper/pair_diff.html)] [[`arXiv`](https://arxiv.org/abs/2303.17546)] [[`pdf`](https://arxiv.org/pdf/2303.17546.pdf)] [[`BibTeX`](#BibTex)]
 
-**PAIR-Diffusion: Object-Level Image Editing with
-Structure-and-Appearance Paired Diffusion Models**<br>
-<a href="https://vidit98.github.io/" style="color:blue;">Vidit Goel</a><sup>1*</sup>, 
-  <a href="https://helia95.github.io/" style="color:blue;">Elia Peruzzo</a><sup>1,2*</sup>,
+[![Framework: PyTorch](https://img.shields.io/badge/Framework-PyTorch-orange.svg)](https://pytorch.org/) [![HuggingFace space](https://img.shields.io/badge/🤗-HuggingFace%20Space-cyan.svg)](https://huggingface.co/spaces/PAIR/PAIR-Diffusion) [![YouTube](https://badges.aleen42.com/src/youtube.svg)](https://youtu.be/_Zr1pOi7Chw) [![License](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
+
+
+<a href="https://vidit98.github.io/" style="color:blue;">Vidit Goel</a><sup>1</sup>, 
+  <a href="https://helia95.github.io/" style="color:blue;">Elia Peruzzo</a><sup>1,2</sup>,
   <a href="https://yifanjiang19.github.io/" style="color:blue;">Yifan Jiang</a><sup>3</sup>, 
+  <a href="https://ifp-uiuc.github.io/" style="color:blue;">Xingqian Xu</a><sup>3</sup>, 
   <a href="https://ir1d.github.io/" style="color:blue;">Dejia Xu</a><sup>3</sup>, 
   <a href="http://disi.unitn.it/~sebe/" style="color:blue;">Nicu Sebe</a><sup>2</sup>,
   <a href=" https://people.eecs.berkeley.edu/~trevor/" style="color:blue;">Trevor Darrell</a><sup>4</sup>, 
   <a href="https://vita-group.github.io/" style="color:blue;">Zhangyang Wang</a><sup>1,3</sup>
   and <a href="https://www.humphreyshi.com/home" style="color:blue;">Humphrey Shi</a> <sup>1,5,6</sup> <br>
 
-In association with Picsart AI Research (PAIR)<sup>1</sup>, UTrento<sup>2</sup>, UT Austin<sup>3</sup>, UC Berkeley<sup>4</sup>, UOregon<sup>5</sup>, UIUC<sup>6</sup>
+  <img src="assets/Teaserv2.png" width="100%"/>
 
-*equal contribution
+  <img src="assets/Teaser_Small.png" width="100%"/>
 
-We built Structure and Appearance Paired (PAIR) Diffusion that allows reference image-guided appearance manipulation and structure editing of an image at an object level. Describing object appearances using text can be challenging and ambiguous, PAIR Diffusion enables a user to control the appearance of an object using images.
-
-Try our demo at [![Huggingface space](https://img.shields.io/badge/🤗-Huggingface%20Space-cyan.svg)](https://huggingface.co/spaces/PAIR/PAIR-Diffusion)
-
-
-[[arXiv](https://arxiv.org/abs/2303.17546)][[Video](https://drive.google.com/file/d/1s96TNWgAwBjRDTyFTWakZosO3Ot_Fny6/view?usp=share_link)]
-
+## Features
+All the operations below can be performed at an object level. Our framework is general and can be applied to any diffusion model.
+1. Appearance Editing
+2. Free Form Shape Editing
+3. Adding Objects
+4. Variation
+5. Multimodal control using reference images and text
 ## News
- * [10/11/2023] Upated the paper with the improved model and inference method.  We now support comprehensive editing capabilities along with multimodal control. Code and model will be released soon
+ * [10/11/2023] New and improved method and models 🚀🚀. Models and code will be released soon.
  * [04/09/2023] Inference code released
  * [04/07/2023] Demo relased on [🤗Huggingface space](https://huggingface.co/spaces/PAIR/PAIR-Diffusion)!
  * [03/30/2023] Paper released on [arXiv](https://arxiv.org/abs/2303.17546)
@@ -37,25 +39,20 @@ Given below are results for appearace editing using our method on SDv1.5
 <img src="assets/door.gif" width="99%" raw=true>
 
 ## Object Level Image Editing
-### Stable Diffusion Results
-* Applying our method to Stable Diffusion allows reference image based editing in the wild
+### Appearance Editing
 
 <p align="center">
-  <img src="assets/SD_app.png" width="99%">
+  <img src="assets/Appearance.png" width="99%">
 </p>
 
-* We can edit both structure and appearance of the objects independently.
+### Free form Shape Editing and Adding Object
 
 <p align="center">
-  <img src="assets/SD_Teaserv1.png" width="99%">
+  <img src="assets/Add_Obj.png" width="99%">
 </p>
 
 
-### Unconditional Diffusion Models
-* PAIR diffusion also works with unconditional diffusion models, we show results on LSUN churches, bedrooms and CelebA-HQ. We can perform edits using both in-domain and out-of-domain reference images.
-<p align="center">
-  <img src="assets/Teaser.png" width="99%">
-</p>
+For more results please refer to our project page and paper. 
 
 ## Requirements
 Setup the conda environment using the command below. We use Oneformer to get segmentation maps during inference, please setup environment for Oneformer following [the repo](https://github.com/SHI-Labs/OneFormer/blob/main/INSTALL.md)
