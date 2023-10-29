@@ -4,22 +4,22 @@
 [![Framework: PyTorch](https://img.shields.io/badge/Framework-PyTorch-orange.svg)](https://pytorch.org/) [![HuggingFace space](https://img.shields.io/badge/🤗-HuggingFace%20Space-cyan.svg)](https://huggingface.co/spaces/PAIR/PAIR-Diffusion) [![YouTube](https://badges.aleen42.com/src/youtube.svg)](https://youtu.be/_Zr1pOi7Chw) [![License](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 
 
-<a href="https://vidit98.github.io/" style="color:blue;">Vidit Goel</a><sup>1</sup>, 
-  <a href="https://helia95.github.io/" style="color:blue;">Elia Peruzzo</a><sup>1,2</sup>,
-  <a href="https://yifanjiang19.github.io/" style="color:blue;">Yifan Jiang</a><sup>3</sup>, 
-  <a href="https://ifp-uiuc.github.io/" style="color:blue;">Xingqian Xu</a><sup>3</sup>, 
-  <a href="https://ir1d.github.io/" style="color:blue;">Dejia Xu</a><sup>3</sup>, 
-  <a href="http://disi.unitn.it/~sebe/" style="color:blue;">Nicu Sebe</a><sup>2</sup>,
-  <a href=" https://people.eecs.berkeley.edu/~trevor/" style="color:blue;">Trevor Darrell</a><sup>4</sup>, 
-  <a href="https://vita-group.github.io/" style="color:blue;">Zhangyang Wang</a><sup>1,3</sup>
-  and <a href="https://www.humphreyshi.com/home" style="color:blue;">Humphrey Shi</a> <sup>1,5,6</sup> <br>
+<a href="https://vidit98.github.io/" style="color:blue;">Vidit Goel</a>, 
+  <a href="https://helia95.github.io/" style="color:blue;">Elia Peruzzo</a>,
+  <a href="https://yifanjiang19.github.io/" style="color:blue;">Yifan Jiang</a>, 
+  <a href="https://ifp-uiuc.github.io/" style="color:blue;">Xingqian Xu</a>, 
+  <a href="https://ir1d.github.io/" style="color:blue;">Dejia Xu</a>, 
+  <a href="http://disi.unitn.it/~sebe/" style="color:blue;">Nicu Sebe</a>,
+  <a href="https://people.eecs.berkeley.edu/~trevor/" style="color:blue;">Trevor Darrell</a>, 
+  <a href="https://vita-group.github.io/" style="color:blue;">Zhangyang Wang</a>,
+  and <a href="https://www.humphreyshi.com/home" style="color:blue;">Humphrey Shi</a> <br>
 
   <img src="assets/Teaserv2.png" width="100%"/>
 
   <img src="assets/Teaser_Small.png" width="100%"/>
 
 ## Features
-All the operations below can be performed at an object level. Our framework is general and can be applied to any diffusion model.
+Our framework is general and can be applied to any diffusion model. All the operations below can be performed at an object level. 
 1. Appearance Editing
 2. Free Form Shape Editing
 3. Adding Objects
