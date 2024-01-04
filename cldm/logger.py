@@ -114,16 +114,16 @@ class SetupCallback(Callback):
             OmegaConf.save(OmegaConf.create({"lightning": self.lightning_config}),
                            os.path.join(self.cfgdir, "{}-lightning.yaml".format(self.now)))
 
-        else:
-            # ModelCheckpoint callback created log directory --- remove it
-            if not self.resume and os.path.exists(self.logdir):
-                dst, name = os.path.split(self.logdir)
-                dst = os.path.join(dst, "child_runs", name)
-                os.makedirs(os.path.split(dst)[0], exist_ok=True)
-                try:
-                    os.rename(self.logdir, dst)
-                except FileNotFoundError:
-                    pass
+        # else:
+        #     # ModelCheckpoint callback created log directory --- remove it
+        #     if not self.resume and os.path.exists(self.logdir):
+        #         dst, name = os.path.split(self.logdir)
+        #         dst = os.path.join(dst, "child_runs", name)
+        #         os.makedirs(os.path.split(dst)[0], exist_ok=True)
+        #         try:
+        #             os.rename(self.logdir, dst)
+        #         except FileNotFoundError:
+        #             pass
 
 
 class ImageLogger(Callback):

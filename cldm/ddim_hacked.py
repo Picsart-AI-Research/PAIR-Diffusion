@@ -316,7 +316,6 @@ class DDIMSampler(object):
         return x_dec
     
 
-
 class DDIMSamplerSpaCFG(DDIMSampler):
     @torch.no_grad()
     def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
@@ -332,8 +331,8 @@ class DDIMSamplerSpaCFG(DDIMSampler):
             model_uncond = self.model.apply_model(x, t, unconditional_conditioning[0])
             model_struct = self.model.apply_model(x, t, unconditional_conditioning[1])
             model_struct_app = self.model.apply_model(x, t, unconditional_conditioning[2])
-            sT, sS, sF = unconditional_guidance_scale
-            model_output = model_uncond + sS * (model_struct - model_uncond) + sF * (model_struct_app - model_struct) + sT * (model_t - model_struct_app)
+            sS, sF, sT = unconditional_guidance_scale
+            model_output = model_uncond + sS * (model_struct - model_uncond) + sF * (model_struct_app - model_struct) + sT * (model_t - model_uncond)
 
         if self.model.parameterization == "v":
             e_t = self.model.predict_eps_from_z_and_v(x, t, model_output)

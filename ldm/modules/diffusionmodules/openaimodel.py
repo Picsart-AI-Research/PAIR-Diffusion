@@ -69,19 +69,31 @@ class TimestepBlock(nn.Module):
         Apply the module to `x` given `emb` timestep embeddings.
         """
 
+class TimestepBlockSpa(nn.Module):
+    """
+    Any module where forward() takes timestep embeddings as a second argument.
+    """
 
-class TimestepEmbedSequential(nn.Sequential, TimestepBlock):
+    @abstractmethod
+    def forward(self, x, emb, obj_feat):
+        """
+        Apply the module to `x` given `emb` timestep embeddings.
+        """
+
+class TimestepEmbedSequential(nn.Sequential, TimestepBlock, TimestepBlockSpa):
     """
     A sequential module that passes timestep embeddings to the children that
     support it as an extra input.
     """
 
-    def forward(self, x, emb, context=None, *args):
+    def forward(self, x, emb, context=None, obj_feat=None,obj_masks=None, *args):
         for layer in self:
             if isinstance(layer, TimestepBlock):
                 x = layer(x, emb)
             elif isinstance(layer, SpatialTransformer):
-                x = layer(x, context)
+                x = layer(x, context, obj_masks=obj_masks, obj_feats=obj_feat)
+            elif isinstance(layer, TimestepBlockSpa):
+                x = layer(x, emb, obj_feat)
             else:
                 x = layer(x)
         return x

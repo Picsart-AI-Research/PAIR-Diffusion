@@ -42,7 +42,7 @@ def init_(tensor):
     dim = tensor.shape[-1]
     std = 1 / math.sqrt(dim)
     tensor.uniform_(-std, std)
-    return tensor
+    return tensor   
 
 
 # feedforward
@@ -143,7 +143,7 @@ class SpatialSelfAttention(nn.Module):
 
 
 class CrossAttention(nn.Module):
-    def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0.):
+    def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0., **kargs):
         super().__init__()
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
@@ -160,7 +160,7 @@ class CrossAttention(nn.Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x, context=None, mask=None):
+    def forward(self, x, context=None, mask=None, **kargs):
         h = self.heads
 
         q = self.to_q(x)
@@ -192,6 +192,34 @@ class CrossAttention(nn.Module):
         out = einsum('b i j, b j d -> b i d', sim, v)
         out = rearrange(out, '(b h) n d -> b n (h d)', h=h)
         return self.to_out(out)
+
+
+class MaskGuidedSelfAttention(nn.Module):
+    def __init__(self, query_dim, context_dim=None, heads=8, dim_head=64, dropout=0., obj_feat_dim=1024):
+        super().__init__()
+        #here context dim is for object features coming from image encoder
+        inner_dim = dim_head * heads
+        self.heads = heads
+
+        self.obj_feats_map = nn.Linear(obj_feat_dim, inner_dim)
+        self.to_v = nn.Linear(inner_dim, inner_dim, bias=False)
+
+        self.to_out = nn.Sequential(
+            nn.Linear(inner_dim, query_dim),
+            nn.Dropout(dropout)
+        )
+        
+        self.scale = dim_head ** -0.5
+
+    def forward(self, x, context=None, mask=None, obj_mask=None, obj_feat=None):
+        _, _, ht, wd = obj_feat.shape
+        obj_feat = rearrange(obj_feat, 'b c h w -> b (h w) c').contiguous()
+        obj_feat = self.obj_feats_map(obj_feat)
+        v = self.to_v(obj_feat)
+        return self.to_out(v)
+
+
+
 
 
 class MemoryEfficientCrossAttention(nn.Module):
@@ -246,17 +274,19 @@ class MemoryEfficientCrossAttention(nn.Module):
 class BasicTransformerBlock(nn.Module):
     ATTENTION_MODES = {
         "softmax": CrossAttention,  # vanilla attention
-        "softmax-xformers": MemoryEfficientCrossAttention
+        "softmax-xformers": MemoryEfficientCrossAttention,
+        "maskguided": MaskGuidedSelfAttention
     }
     def __init__(self, dim, n_heads, d_head, dropout=0., context_dim=None, gated_ff=True, checkpoint=True,
-                 disable_self_attn=False):
+                 disable_self_attn=False, attn1_mode="softmax", obj_feat_dim=1024):
         super().__init__()
         attn_mode = "softmax-xformers" if XFORMERS_IS_AVAILBLE else "softmax"
         assert attn_mode in self.ATTENTION_MODES
         attn_cls = self.ATTENTION_MODES[attn_mode]
+        attn1_cls = self.ATTENTION_MODES[attn1_mode]
         self.disable_self_attn = disable_self_attn
-        self.attn1 = attn_cls(query_dim=dim, heads=n_heads, dim_head=d_head, dropout=dropout,
-                              context_dim=context_dim if self.disable_self_attn else None)  # is a self-attention if not self.disable_self_attn
+        self.attn1 = attn1_cls(query_dim=dim, heads=n_heads, dim_head=d_head, dropout=dropout,
+                              context_dim=context_dim if self.disable_self_attn else None, obj_feat_dim=obj_feat_dim)  # is a self-attention if not self.disable_self_attn
         self.ff = FeedForward(dim, dropout=dropout, glu=gated_ff)
         self.attn2 = attn_cls(query_dim=dim, context_dim=context_dim,
                               heads=n_heads, dim_head=d_head, dropout=dropout)  # is self-attn if context is none
@@ -265,11 +295,17 @@ class BasicTransformerBlock(nn.Module):
         self.norm3 = nn.LayerNorm(dim)
         self.checkpoint = checkpoint
 
-    def forward(self, x, context=None):
-        return checkpoint(self._forward, (x, context), self.parameters(), self.checkpoint)
+        # self.ff_text_obj_feat = FeedForward(context_dim, dim_out=dim, mult=1, dropout=dropout, glu=gated_ff)
 
-    def _forward(self, x, context=None):
-        x = self.attn1(self.norm1(x), context=context if self.disable_self_attn else None) + x
+    def forward(self, x, context=None, obj_mask=None, obj_feat=None):
+        if obj_mask is None:
+            # return self._forward(x, context, obj_mask, obj_feat)
+            return checkpoint(self._forward, (x, context), self.parameters(), self.checkpoint)
+        return checkpoint(self._forward, (x, context, obj_mask, obj_feat), self.parameters(), self.checkpoint)
+
+    def _forward(self, x, context=None, obj_mask=None, obj_feat=None):
+        x = self.attn1(self.norm1(x), context=context if self.disable_self_attn else None, 
+                       obj_mask=obj_mask, obj_feat=obj_feat) + x
         x = self.attn2(self.norm2(x), context=context) + x
         x = self.ff(self.norm3(x)) + x
         return x
@@ -287,7 +323,7 @@ class SpatialTransformer(nn.Module):
     def __init__(self, in_channels, n_heads, d_head,
                  depth=1, dropout=0., context_dim=None,
                  disable_self_attn=False, use_linear=False,
-                 use_checkpoint=True):
+                 use_checkpoint=True,attn1_mode='softmax',obj_feat_dim=None):
         super().__init__()
         if exists(context_dim) and not isinstance(context_dim, list):
             context_dim = [context_dim]
@@ -305,7 +341,8 @@ class SpatialTransformer(nn.Module):
 
         self.transformer_blocks = nn.ModuleList(
             [BasicTransformerBlock(inner_dim, n_heads, d_head, dropout=dropout, context_dim=context_dim[d],
-                                   disable_self_attn=disable_self_attn, checkpoint=use_checkpoint)
+                                   disable_self_attn=disable_self_attn, checkpoint=use_checkpoint, attn1_mode=attn1_mode,
+                                   obj_feat_dim=obj_feat_dim)
                 for d in range(depth)]
         )
         if not use_linear:
@@ -318,11 +355,20 @@ class SpatialTransformer(nn.Module):
             self.proj_out = zero_module(nn.Linear(in_channels, inner_dim))
         self.use_linear = use_linear
 
-    def forward(self, x, context=None):
+    def forward(self, x, context=None, obj_masks=None, obj_feats=None):
         # note: if no context is given, cross-attention defaults to self-attention
         if not isinstance(context, list):
             context = [context]
+        if not isinstance(obj_masks, list):
+            obj_masks = [obj_masks]
+        if not isinstance(obj_feats, list):
+            obj_feats = [obj_feats]
+
         b, c, h, w = x.shape
+        if obj_feats[0] is not None:
+            obj_feats = [torch.nn.functional.interpolate(ofe, [h,w]) for ofe in obj_feats]
+            obj_masks = [torch.nn.functional.interpolate(om, [h,w]) for om in obj_masks]
+
         x_in = x
         x = self.norm(x)
         if not self.use_linear:
@@ -331,7 +377,7 @@ class SpatialTransformer(nn.Module):
         if self.use_linear:
             x = self.proj_in(x)
         for i, block in enumerate(self.transformer_blocks):
-            x = block(x, context=context[i])
+            x = block(x, context=context[i], obj_mask=obj_masks[i], obj_feat=obj_feats[i])
         if self.use_linear:
             x = self.proj_out(x)
         x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w).contiguous()

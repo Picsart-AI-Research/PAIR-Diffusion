@@ -10,7 +10,6 @@ from ldm.modules.diffusionmodules.util import (
     zero_module,
     timestep_embedding,
 )
-import torchvision
 from einops import rearrange, repeat
 from torchvision.utils import make_grid
 from ldm.modules.attention import SpatialTransformer
@@ -18,42 +17,9 @@ from ldm.modules.diffusionmodules.openaimodel import UNetModel, TimestepEmbedSeq
 from ldm.models.diffusion.ddpm import LatentDiffusion
 from ldm.util import log_txt_as_img, exists, instantiate_from_config
 from ldm.models.diffusion.ddim import DDIMSampler
+from cldm.appearance_networks import VGGPerceptualLoss, DINOv2
 
 
-class VGGPerceptualLoss(torch.nn.Module):
-    def __init__(self, resize=True):
-        super(VGGPerceptualLoss, self).__init__()
-        blocks = []
-        blocks.append(torchvision.models.vgg16(pretrained=True).features[:4].eval())
-        blocks.append(torchvision.models.vgg16(pretrained=True).features[4:9].eval())
-        blocks.append(torchvision.models.vgg16(pretrained=True).features[9:16].eval())
-        blocks.append(torchvision.models.vgg16(pretrained=True).features[16:23].eval())
-        for bl in blocks:
-            for p in bl.parameters():
-                p.requires_grad = False
-        self.blocks = torch.nn.ModuleList(blocks)
-        self.transform = torch.nn.functional.interpolate
-        self.resize = resize
-        self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
-        self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
-
-    def forward(self, input, feature_layers=[0, 1, 2, 3], style_layers=[1,]):
-        if input.shape[1] != 3:
-            input = input.repeat(1, 3, 1, 1)
-            target = target.repeat(1, 3, 1, 1)
-        input = (input-self.mean) / self.std
-        if self.resize:
-            input = self.transform(input, mode='bilinear', size=(224, 224), align_corners=False)
-        x = input
-        gram_matrices_all = []
-        feats = []
-        for i, block in enumerate(self.blocks):
-            x = block(x)
-            if i in style_layers:
-                feats.append(x)
-                
-        return  feats
-    
 
 
 class ControlledUnetModel(UNetModel):
@@ -321,6 +287,7 @@ class ControlNet(nn.Module):
     def forward(self, x, hint, timesteps, context, **kwargs):
         t_emb = timestep_embedding(timesteps, self.model_channels, repeat_only=False)
         emb = self.time_embed(t_emb)
+        # hint = hint[:,:-1]
         guided_hint = self.input_hint_block(hint, emb, context, x.shape)
 
         outs = []
@@ -339,57 +306,6 @@ class ControlNet(nn.Module):
         outs.append(self.middle_block_out(h, emb, context))
 
         return outs
-    
-class Interpolate(nn.Module):
-    def __init__(self, size, mode):
-        super(Interpolate, self).__init__()
-        self.interp = torch.nn.functional.interpolate
-        self.size = size
-        self.mode = mode
-        self.factor = 8
-        
-    def forward(self, x):
-        h,w = x.shape[2]//self.factor,  x.shape[3]//self.factor
-        x = self.interp(x, size=(h,w), mode=self.mode)
-        return x
-
-class ControlNetSAP(ControlNet):
-    def __init__(
-            self,
-            hint_channels,
-            model_channels,
-            input_hint_block='fixed',
-            size = 64,
-            mode='nearest',
-            *args,
-            **kwargs
-    ):
-        super().__init__( hint_channels=hint_channels, model_channels=model_channels, *args, **kwargs)
-        #hint channels are atleast 128 dims
-        
-        if input_hint_block == 'learnable':
-            ch = 2 ** (int(math.log2(hint_channels)))
-            self.input_hint_block = TimestepEmbedSequential(
-                conv_nd(self.dims, hint_channels, hint_channels, 3, padding=1),
-                nn.SiLU(),
-                conv_nd(self.dims, hint_channels, 2*ch, 3, padding=1, stride=2),
-                nn.SiLU(),
-                conv_nd(self.dims, 2*ch, 2*ch, 3, padding=1),
-                nn.SiLU(),
-                conv_nd(self.dims, 2*ch, 2*ch, 3, padding=1, stride=2),
-                nn.SiLU(),
-                conv_nd(self.dims, 2*ch, 2*ch, 3, padding=1),
-                nn.SiLU(),
-                conv_nd(self.dims, 2*ch, model_channels, 3, padding=1, stride=2),
-                nn.SiLU(),
-                zero_module(conv_nd(self.dims, model_channels, model_channels, 3, padding=1))
-            )
-        else:
-            print("Only interpolation")
-            self.input_hint_block = TimestepEmbedSequential(
-                                    Interpolate(size, mode), 
-                                    zero_module(conv_nd(self.dims, hint_channels, model_channels, 3, padding=1)))
-
 
 class ControlLDM(LatentDiffusion):
 
@@ -416,11 +332,11 @@ class ControlLDM(LatentDiffusion):
         diffusion_model = self.model.diffusion_model
 
         cond_txt = torch.cat(cond['c_crossattn'], 1)
-
         if cond['c_concat'] is None:
             eps = diffusion_model(x=x_noisy, timesteps=t, context=cond_txt, control=None, only_mid_control=self.only_mid_control)
         else:
-            control = self.control_model(x=x_noisy, hint=torch.cat(cond['c_concat'], 1), timesteps=t, context=cond_txt)
+            # control = self.control_model(x=x_noisy, hint=torch.cat(cond['c_concat'], 1), timesteps=t, context=cond_txt)
+            control = self.control_model(x=x_noisy, hint=cond['c_concat'][0], timesteps=t, context=cond_txt)
             control = [c * scale for c, scale in zip(control, self.control_scales)]
             eps = diffusion_model(x=x_noisy, timesteps=t, context=cond_txt, control=control, only_mid_control=self.only_mid_control)
 
@@ -439,7 +355,7 @@ class ControlLDM(LatentDiffusion):
         use_ddim = ddim_steps is not None
 
         log = dict()
-        z, c = self.get_input(batch, self.first_stage_key, bs=N)
+        z, c = self.get_input(batch, self.first_stage_key, bs=N, logging=True)
         c_cat, c = c["c_concat"][0][:N], c["c_crossattn"][0][:N]
         N = min(z.shape[0], N)
         n_row = min(z.shape[0], n_row)
@@ -494,8 +410,9 @@ class ControlLDM(LatentDiffusion):
     @torch.no_grad()
     def sample_log(self, cond, batch_size, ddim, ddim_steps, **kwargs):
         ddim_sampler = DDIMSampler(self)
-        b, c, h, w = cond["c_concat"][0].shape
-        shape = (self.channels, h // 8, w // 8)
+        b, c, h, w = cond["c_concat"][0][0].shape if isinstance(cond["c_concat"][0], list) else cond["c_concat"][0].shape
+        # shape = (self.channels, h // 8, w // 8)
+        shape = (self.channels, h, w)
         samples, intermediates = ddim_sampler.sample(ddim_steps, batch_size, shape, cond, verbose=False, **kwargs)
         return samples, intermediates
 
@@ -521,23 +438,54 @@ class ControlLDM(LatentDiffusion):
             self.cond_stage_model = self.cond_stage_model.cuda()
 
 
-class SAP(ControlLDM):
+
+class PAIRDiffusion(ControlLDM):
     @torch.no_grad()
-    def __init__(self,control_stage_config, control_key, only_mid_control, *args, **kwargs):
+    def __init__(self,control_stage_config, control_key, only_mid_control, app_net='vgg', app_layer_conc=(1,), app_layer_ca=(6,6,18,18),
+                 appearance_net_locked=True, concat_multi_app=False, train_structure_variation_only=False, instruct=False, *args, **kwargs):
         super().__init__(control_stage_config=control_stage_config, 
                             control_key=control_key, 
                             only_mid_control=only_mid_control, 
                             *args, **kwargs)
-        self.appearance_net = VGGPerceptualLoss().to(self.device)
 
-    def get_appearance(self, img, mask, return_all=False):
+        self.appearance_net_conc = VGGPerceptualLoss().to(self.device)
+        self.appearance_net_ca = DINOv2().to(self.device)
+        self.appearance_net = VGGPerceptualLoss().to(self.device) #need to be removed no use
+        self.app_layer_conc = app_layer_conc
+        self.app_layer_ca = app_layer_ca
+
+
+    def get_appearance(self, net, layer, img, mask, return_all=False):
         img = (img + 1) * 0.5
-        feat = self.appearance_net(img)[0]
+        feat = net(img)
+        splatted_feat = []
+        mean_feat = []
+        for fe_i in layer:
+            v = self.get_appearance_single(feat[fe_i], mask, return_all=return_all)
+            if return_all:
+                spl, me_f, one_hot, empty_mask = v
+                splatted_feat.append(spl)
+                mean_feat.append(me_f)
+            else:
+                splatted_feat.append(v)
+
+        if len(layer) == 1:
+            splatted_feat = splatted_feat[0]
+            # mean_feat = mean_feat[0]
+            
+        del feat
+
+        if return_all:
+            return splatted_feat, mean_feat, one_hot, empty_mask
+            
+        return splatted_feat
+    
+    def get_appearance_single(self, feat, mask, return_all):
         empty_mask_flag = torch.sum(mask, dim=(1,2,3)) == 0
         
 
         empty_appearance = torch.zeros(feat.shape).to(self.device)
-        mask = torch.nn.functional.interpolate(mask.float(), (feat.shape[2:])).long()
+        mask = torch.nn.functional.interpolate(mask.float(), size=(feat.shape[2], feat.shape[3])).long()
         one_hot = torch.nn.functional.one_hot(mask[:,0]).permute(0,3,1,2).float()
             
         feat = torch.einsum('nchw, nmhw->nmchw', feat, one_hot)
@@ -547,32 +495,68 @@ class SAP(ControlLDM):
         mean_feat[:, 0] = torch.zeros(mean_feat[:,0].shape).to(self.device) #set edges in panopitc mask to empty appearance feature
 
         splatted_feat = torch.einsum('nmc, nmhw->nchw', mean_feat, one_hot)
-        splatted_feat[empty_mask_flag] = empty_appearance[empty_mask_flag]
+        splatted_feat[empty_mask_flag] = empty_appearance[empty_mask_flag] 
         splatted_feat = torch.nn.functional.normalize(splatted_feat) #l2 normalize on c dim
 
         if return_all:
             return splatted_feat, mean_feat, one_hot, empty_mask_flag
-        
         return splatted_feat
-    
+
+
     def get_input(self, batch, k, bs=None, *args, **kwargs):
         z, c, x_orig, x_recon = super(ControlLDM, self).get_input(batch, self.first_stage_key, return_first_stage_outputs=True , *args, **kwargs)
         structure = batch['seg'].unsqueeze(1)
         mask =  batch['mask'].unsqueeze(1).to(self.device)
-        appearance = self.get_appearance(x_orig, mask)
+
+        appearance_conc = self.get_appearance(self.appearance_net_conc, self.app_layer_conc, x_orig, mask)
+        appearance_ca = self.get_appearance(self.appearance_net_ca, self.app_layer_ca, x_orig, mask)
+
         if bs is not None:
             structure = structure[:bs]
-            appearance = appearance[:bs]
-
         structure = structure.to(self.device)
-        appearance = appearance.to(self.device)
         structure = structure.to(memory_format=torch.contiguous_format).float()
-        appearance = appearance.to(memory_format=torch.contiguous_format).float()
-        structure = torch.nn.functional.interpolate(structure, x_orig.shape[2:])
-        appearance = torch.nn.functional.interpolate(appearance, x_orig.shape[2:])
-        control = torch.cat([structure, appearance], dim=1)
-        return z, dict(c_crossattn=[c], c_concat=[control])
-    
+        structure = torch.nn.functional.interpolate(structure, z.shape[2:])
+
+        mask = torch.nn.functional.interpolate(mask.float(), z.shape[2:])
+
+        def format_appearance(appearance):
+            if isinstance(appearance, list):
+                if bs is not None:
+                    appearance = [ap[:bs] for ap in appearance]
+                appearance = [ap.to(self.device) for ap in appearance]
+                appearance = [ap.to(memory_format=torch.contiguous_format).float() for ap in appearance]
+                appearance = [torch.nn.functional.interpolate(ap, z.shape[2:]) for ap in appearance]
+
+            else:
+                if bs is not None:
+                    appearance = appearance[:bs]
+                appearance = appearance.to(self.device)
+                appearance = appearance.to(memory_format=torch.contiguous_format).float()
+                appearance = torch.nn.functional.interpolate(appearance, z.shape[2:])
+
+            return appearance
+        
+        appearance_conc = format_appearance(appearance_conc)
+        appearance_ca = format_appearance(appearance_ca)
+
+        if isinstance(appearance_conc, list):
+            concat_control = torch.cat(appearance_conc, dim=1)
+            concat_control = torch.cat([structure, concat_control, mask], dim=1)
+        else:
+            concat_control = torch.cat([structure, appearance_conc, mask], dim=1)
+
+
+        if isinstance(appearance_ca, list):
+            control = []
+            for ap in appearance_ca:
+                control.append(torch.cat([structure, ap, mask], dim=1))
+            control.append(concat_control)
+            return z, dict(c_crossattn=[c], c_concat=[control])
+        else:
+            control = torch.cat([structure, appearance_ca, mask], dim=1)
+            control.append(concat_control)
+            return z, dict(c_crossattn=[c], c_concat=[control])
+        
     @torch.no_grad()
     def log_images(self, batch, N=4, n_row=2, sample=False, ddim_steps=50, ddim_eta=0.0, return_keys=None,
                    quantize_denoised=True, inpaint=True, plot_denoise_rows=False, plot_progressive_rows=False,
@@ -583,11 +567,14 @@ class SAP(ControlLDM):
 
         log = dict()
         z, c = self.get_input(batch, self.first_stage_key, bs=N)
-        c_cat, c = c["c_concat"][0][:N,], c["c_crossattn"][0][:N]
+        c_cat, c = c["c_concat"][0], c["c_crossattn"][0]
         N = min(z.shape[0], N)
         n_row = min(z.shape[0], n_row)
         log["reconstruction"] = self.decode_first_stage(z)
-        log["control"] = c_cat[:, :1]
+        log["control"] = batch['mask'].unsqueeze(1)
+        if 'aug_mask' in batch:
+            log['aug_mask'] = batch['aug_mask'].unsqueeze(1)
+
         log["conditioning"] = log_txt_as_img((512, 512), batch[self.cond_stage_key], size=16)
 
         if plot_diffusion_rows:
@@ -629,7 +616,7 @@ class SAP(ControlLDM):
 
         if unconditional_guidance_scale > 1.0:
             uc_cross = self.get_unconditional_conditioning(N)
-            uc_cat = c_cat  # torch.zeros_like(c_cat)
+            uc_cat = list(c_cat)  # torch.zeros_like(c_cat)
             uc_full = {"c_concat": [uc_cat], "c_crossattn": [uc_cross]}
             samples_cfg, _ = self.sample_log(cond={"c_concat": [c_cat], "c_crossattn": [c]},
                                              batch_size=N, ddim=use_ddim,
@@ -641,3 +628,18 @@ class SAP(ControlLDM):
             log[f"samples_cfg_scale_{unconditional_guidance_scale:.2f}"] = x_samples_cfg
 
         return log
+
+        
+    def configure_optimizers(self):
+        lr = self.learning_rate
+
+        params = list(self.control_model.parameters())
+        if not self.sd_locked:
+            params += list(self.model.diffusion_model.output_blocks.parameters())
+            params += list(self.model.diffusion_model.out.parameters())
+
+        opt = torch.optim.AdamW(params, lr=lr)
+        return opt
+
+
+

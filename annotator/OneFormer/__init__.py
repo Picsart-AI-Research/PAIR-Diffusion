@@ -22,7 +22,6 @@ from oneformer import (
     add_oneformer_config,
     add_common_config,
     add_swin_config,
-    add_dinat_config,
     add_convnext_config,
 )
 from demo.defaults import DefaultPredictor
@@ -34,7 +33,6 @@ def setup_cfg(config_file, wts):
     add_deeplab_config(cfg)
     add_common_config(cfg)
     add_swin_config(cfg)
-    add_dinat_config(cfg)
     add_convnext_config(cfg)
     add_oneformer_config(cfg)
     cfg.merge_from_file(config_file)
