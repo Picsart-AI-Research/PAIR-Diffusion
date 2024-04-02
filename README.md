@@ -7,10 +7,10 @@
 <a href="https://vidit98.github.io/" style="color:blue;">Vidit Goel</a><sup>1</sup>, 
   <a href="https://helia95.github.io/" style="color:blue;">Elia Peruzzo</a><sup>1,2</sup>,
   <a href="https://yifanjiang19.github.io/" style="color:blue;">Yifan Jiang</a><sup>3</sup>, 
-  <a href="https://ifp-uiuc.github.io/" style="color:blue;">Xingqian Xu</a><sup>3</sup>, 
   <a href="https://ir1d.github.io/" style="color:blue;">Dejia Xu</a><sup>3</sup>, 
+  <a href="https://ifp-uiuc.github.io/" style="color:blue;">Xingqian Xu</a><sup>3</sup>, 
   <a href="http://disi.unitn.it/~sebe/" style="color:blue;">Nicu Sebe</a><sup>2</sup>,
-  <a href=" https://people.eecs.berkeley.edu/~trevor/" style="color:blue;">Trevor Darrell</a><sup>4</sup>, 
+  <a href="https://people.eecs.berkeley.edu/~trevor/" style="color:blue;">Trevor Darrell</a><sup>4</sup>, 
   <a href="https://vita-group.github.io/" style="color:blue;">Zhangyang Wang</a><sup>1,3</sup>
   and <a href="https://www.humphreyshi.com/home" style="color:blue;">Humphrey Shi</a> <sup>1,5,6</sup> <br>
 
